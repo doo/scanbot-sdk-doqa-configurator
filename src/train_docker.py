@@ -1,4 +1,5 @@
 import json
+import os
 import random
 from pathlib import Path
 import click
@@ -14,10 +15,10 @@ import CharacterClusteringTransformer
 import OpenCVSVMClassifier
 
 
-@click.command()
+@click.command(context_settings={'show_default': True})
 @click.option('--scanbotsdk_license_key', type=str, required=True, help='Scanbot SDK license key')
 @click.option('--training_dir', type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
-              default=Path('/app/data/'),
+              default=Path(os.path.dirname(os.path.realpath(__file__))) / ".." / "data",
               help='Directory containing training images in the subfolders "good" and "bad"')
 @click.option('--num_jobs', type=int, default=4, help='Number of parallel jobs for training')
 @click.option('--smoke_test', is_flag=True, help='Run a smoke test with a small subset of the data')

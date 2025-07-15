@@ -7,4 +7,4 @@ services:
             SCANBOT_SDK_CORE_VERSION: #TODO Add your Scanbot SDK Core version here (see Readme.md)
         container_name: sbsdk-doqa-configurator
         volumes:
-          - ./data:/app/data
+          - ./data:/data

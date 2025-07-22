@@ -14,4 +14,4 @@ RUN rm /tmp/scanbotsdk*.whl
 
 COPY src/*.py /app/
 
-ENTRYPOINT ["python", "/app/train_docker.py"]
+ENTRYPOINT ["python", "/app/train.py"]

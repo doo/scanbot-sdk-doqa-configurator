@@ -5,31 +5,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-def get_character_properties(
-        character_level_annotations: scanbotsdk.CharacterLevelAnnotations,
-        cluster_features: [str]
-):
-    results: [dict] = []
-
-    for character_level_annotation in character_level_annotations.annotations:
-        result = {}
-        for feature_name in cluster_features:
-            if feature_name == "Contrast":
-                value = character_level_annotation.contrast
-            elif feature_name == "Ocrability":
-                value = character_level_annotation.ocrability
-            elif feature_name == "FontSize":
-                value = character_level_annotation.font_size
-            else:
-                raise ValueError(f"Unknown feature name: {feature_name}")
-            result[feature_name] = value
-        results.append(result)
-
-    return results
-
-
 class CharacterClusteringTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, n_clusters: int, cluster_features: [str] = None):
+    def __init__(self, n_clusters: int=None, cluster_features: [str] = None):
         self.n_clusters = n_clusters
         self.cluster_features = cluster_features if cluster_features is not None else ["Contrast", "Ocrability",
                                                                                        "FontSize"]
@@ -43,13 +20,12 @@ class CharacterClusteringTransformer(BaseEstimator, TransformerMixin):
             ('kmeans', KMeans(n_clusters=self.n_clusters))
         ])
 
-        character_properties = [
-            char_properties
+        character_properties = pd.concat([
+            sample[self.cluster_features]
             for sample in X['character_level_annotations']
-            for char_properties in get_character_properties(sample, self.cluster_features)
-        ]
+        ])
 
-        self.pipeline.fit(pd.DataFrame(character_properties)[self.cluster_features])
+        self.pipeline.fit(character_properties)
         self.fitted_ = True
         return self
 
@@ -60,7 +36,7 @@ class CharacterClusteringTransformer(BaseEstimator, TransformerMixin):
         hists = []
 
         for sample in X['character_level_annotations']:
-            df = pd.DataFrame(get_character_properties(sample, self.cluster_features))
+            df = sample[self.cluster_features]
             cluster_labels = self.pipeline.predict(df[self.cluster_features])
             hist = pd.Series(cluster_labels).value_counts(normalize=True).sort_index()
             hist = hist.reindex(range(self.n_clusters), fill_value=0.0)  # fill missing clusters with 0.0

@@ -1,5 +1,4 @@
 import json
-import os
 import random
 from pathlib import Path
 import click
@@ -11,6 +10,8 @@ from tqdm import tqdm
 import gzip
 import base64
 
+from train_utils import all_features, get_character_properties
+from train_plot import plot_grid_search
 import CharacterClusteringTransformer
 import OpenCVSVMClassifier
 
@@ -22,11 +23,13 @@ import OpenCVSVMClassifier
               help='Directory containing training images in the subfolders "good" and "bad"')
 @click.option('--num_jobs', type=int, default=4, help='Number of parallel jobs for training')
 @click.option('--smoke_test', is_flag=True, help='Run a smoke test with a small subset of the data')
+@click.option('--plot', is_flag=True, help='Create a plot of the grid search results', default=False)
 def main(
         scanbotsdk_license_key: str,
         training_dir: Path,
         num_jobs: int,
         smoke_test: bool,
+        plot: bool
 ):
     scanbotsdk.initialize(scanbotsdk_license_key)
     document_quality_analyzer = scanbotsdk.DocumentQualityAnalyzer(
@@ -52,7 +55,9 @@ def main(
             sample = dict(
                 label=1 if dir_name == 'good' else 0,
                 image_path=file,
-                character_level_annotations=character_level_annotations,
+                character_level_annotations=pd.DataFrame(
+                    get_character_properties(character_level_annotations, all_features)
+                ),
             )
             if len(character_level_annotations.annotations) == 0:
                 print(f"Skipping {file} because no characters could be detected")
@@ -67,24 +72,33 @@ def main(
         raise ValueError(f"Missing samples from one class. Found labels: {set(labels)}")
 
     pipeline = Pipeline([
-        ('clustering', CharacterClusteringTransformer.CharacterClusteringTransformer(n_clusters=10)),
-        ('svm', OpenCVSVMClassifier.OpenCVSVMClassifier(kernel='rbf'))
+        ('clustering', CharacterClusteringTransformer.CharacterClusteringTransformer()),
+        ('svm', OpenCVSVMClassifier.OpenCVSVMClassifier())
     ])
-
-    param_grid = {
-        "clustering__n_clusters": range(8, 20),
-        "svm__kernel": ['poly', 'rbf', 'sigmoid']
-    }
-    if smoke_test:
-        param_grid = {
-            "clustering__n_clusters": [10],
-            "svm__kernel": ['rbf']
-        }
 
     random.shuffle(samples)
 
     X = pd.DataFrame(samples)
     y = pd.Series([sample['label'] for sample in samples])
+
+    scoring = {
+        "accuracy": "accuracy",
+        "num_support_vectors": lambda estimator, X, y: estimator.named_steps['svm'].get_num_support_vectors(),
+    }
+
+    param_grid = {
+        "clustering__n_clusters": [6, 8, 10, 12, *range(15, 50, 5)],
+        "clustering__cluster_features": [
+            ["Contrast", "Ocrability", "FontSize"],
+            ["Contrast", "Ocrability", "FontSize", "OrientationDeviation"],
+        ],
+        "svm__C": [1.0, 5.0, 10.0, 20.0, 40.0, 80.0, 160.0],
+        "svm__gamma_factor": [0.2, 0.5, 1.0, 2.0, 4.0, 8.0],
+        "svm__kernel": ['rbf']
+    }
+    if smoke_test:
+        param_grid["clustering__n_clusters"] = range(6, 10, 15)
+        param_grid["svm__C"] = 1.0,
 
     clf = GridSearchCV(
         estimator=pipeline,
@@ -92,9 +106,15 @@ def main(
         cv=5,
         verbose=10,
         n_jobs=num_jobs,
-        refit=True,
+        refit="accuracy",  # Refit using the accuracy metric
+        error_score="raise",
+        scoring=scoring,
+        return_train_score=True
     )
     clf.fit(X, y)
+
+    if plot:
+        plot_grid_search(clf, training_dir)
 
     # Save the model
     model_path = training_dir / 'DoQA_config.txt'
@@ -113,6 +133,7 @@ def main(
     print(f"DoQA config saved to {model_path}")
     print(f"Cross-validation accuracy: {clf.best_score_}")
     print(f"Parameters: {clf.best_params_}")
+    print(f"Number of support vectors: {clf.best_estimator_.named_steps['svm'].get_num_support_vectors()}")
 
     pred = clf.predict(X)
     predictions_report = []

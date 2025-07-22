@@ -7,8 +7,10 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 
 
 class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
-    def __init__(self, kernel='linear'):
+    def __init__(self, kernel: str = None, C: float = None, gamma_factor: float = None):
         self.kernel = kernel
+        self.C = C
+        self.gamma_factor = gamma_factor
         self.svm_ = None  # Read by scikit-learn's check_is_fitted
 
     def _get_kernel_type(self):
@@ -27,9 +29,12 @@ class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
         self.svm_ = cv2.ml.SVM_create()
         self.svm_.setType(cv2.ml.SVM_C_SVC)
         self.svm_.setKernel(self._get_kernel_type())
-        self.svm_.setC(1.0)
+        assert self.C is not None, "C must be set before fitting"
+        self.svm_.setC(self.C)
         self.svm_.setDegree(3)
-        self.svm_.setGamma(1 / (X.shape[0] * X.var()))
+        assert self.gamma_factor is not None, "Gamma must be set before fitting"
+        gamma = self.gamma_factor / (X.shape[0] * X.var())
+        self.svm_.setGamma(gamma)
 
         self.svm_.train(X, cv2.ml.ROW_SAMPLE, y)
         return self
@@ -39,7 +44,11 @@ class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
         _, y_pred = self.svm_.predict(X)
         return y_pred.ravel()
 
-    def score(self, X, y):
+    def get_num_support_vectors(self):
+        assert self.svm_ is not None, "Model must be fitted before getting support vectors"
+        return self.svm_.getSupportVectors().shape[0]
+
+    def score(self, X, y, sample_weight=None):
         from sklearn.metrics import accuracy_score
         y_pred = self.predict(X)
         return accuracy_score(y, y_pred)
@@ -47,6 +56,8 @@ class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
     def get_params(self, deep=True):
         return {
             "kernel": self.kernel,
+            "C": self.C,
+            "gamma_factor": self.gamma_factor,
         }
 
     def set_params(self, **params):

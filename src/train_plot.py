@@ -53,4 +53,6 @@ def plot_grid_search(clf: GridSearchCV, output_dir: Path):
     fig.update_yaxes(title_text='CV Accuracy', row=1, col=1)
     fig.update_yaxes(title_text='Number of Support Vectors', row=2, col=1)
 
-    fig.write_html(str(output_dir / 'cv_accuracy_vs_clusters.html'))
+    plot_path = output_dir / 'cv_accuracy_vs_clusters.html'
+    print(f"Saving plot to {plot_path}")
+    fig.write_html(str(plot_path))

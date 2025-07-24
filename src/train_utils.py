@@ -1,3 +1,4 @@
+import numpy as np
 import scanbotsdk
 
 all_features = [
@@ -31,3 +32,15 @@ def get_character_properties(
         results.append(result)
 
     return results
+
+def best_low_complexity(cv_results):
+    """
+    Balance model complexity with cross-validated score.
+    """
+    best_accuracy = np.max(cv_results["mean_test_accuracy"])
+    threshold = best_accuracy * 0.97
+    candidate_idx = np.flatnonzero(cv_results["mean_test_accuracy"] >= threshold)
+    best_idx = candidate_idx[
+        cv_results["param_clustering__n_clusters"][candidate_idx].argmin()
+    ]
+    return best_idx

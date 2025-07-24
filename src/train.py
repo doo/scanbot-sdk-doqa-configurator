@@ -10,7 +10,7 @@ from tqdm import tqdm
 import gzip
 import base64
 
-from train_utils import all_features, get_character_properties
+from train_utils import all_features, get_character_properties, best_low_complexity
 from train_plot import plot_grid_search
 import CharacterClusteringTransformer
 import OpenCVSVMClassifier
@@ -92,8 +92,8 @@ def main(
             ["Contrast", "Ocrability", "FontSize"],
             ["Contrast", "Ocrability", "FontSize", "OrientationDeviation"],
         ],
-        "svm__C": [1.0, 5.0, 10.0, 20.0, 40.0, 80.0, 160.0],
-        "svm__gamma_factor": [0.2, 0.5, 1.0, 2.0, 4.0, 8.0],
+        "svm__C": [1.0, 5.0, 10.0, 20.0, 40.0, 80.0],
+        "svm__gamma_factor": [0.5, 1.0, 2.0, 4.0, 8.0],
         "svm__kernel": ['rbf']
     }
     if smoke_test:
@@ -106,7 +106,7 @@ def main(
         cv=5,
         verbose=10,
         n_jobs=num_jobs,
-        refit="accuracy",  # Refit using the accuracy metric
+        refit=best_low_complexity,
         error_score="raise",
         scoring=scoring,
         return_train_score=True
@@ -131,7 +131,7 @@ def main(
         f.write(b64_encoded)
 
     print(f"DoQA config saved to {model_path}")
-    print(f"Cross-validation accuracy: {clf.best_score_}")
+    print(f"Cross-validation accuracy: {clf.cv_results_['mean_train_accuracy'][clf.best_index_]}")
     print(f"Parameters: {clf.best_params_}")
     print(f"Number of support vectors: {clf.best_estimator_.named_steps['svm'].get_num_support_vectors()}")
 

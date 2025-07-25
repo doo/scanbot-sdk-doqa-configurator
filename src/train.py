@@ -4,16 +4,56 @@ from pathlib import Path
 import click
 import pandas as pd
 import scanbotsdk
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_split
 from sklearn.pipeline import Pipeline
 from tqdm import tqdm
 import gzip
 import base64
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
 
 from train_utils import all_features, get_character_properties, best_low_complexity
 from train_plot import plot_grid_search
 import CharacterClusteringTransformer
 import OpenCVSVMClassifier
+
+
+def process_image(file, dir_name, document_quality_analyzer):
+    """Process a single image file and return sample data."""
+    try:
+        image = scanbotsdk.ImageRef.from_path(file)
+        character_level_annotations = document_quality_analyzer.get_character_level_annotations(image=image)
+        api_version = character_level_annotations.api_version
+
+        if len(character_level_annotations.annotations) == 0:
+            print(f"Skipping {file} because no characters could be detected")
+            return None
+
+        sample = dict(
+            label=1 if dir_name == 'good' else 0,
+            image_path=file,
+            character_level_annotations=pd.DataFrame(
+                get_character_properties(character_level_annotations, all_features)
+            ),
+            api_version=api_version
+        )
+        return sample
+    except Exception as e:
+        print(f"Error processing {file}: {e}")
+        return None
+
+
+def stratify_samples(samples):
+    good_samples = [s for s in samples if s['label'] == 1]
+    bad_samples = [s for s in samples if s['label'] == 0]
+
+    random.shuffle(good_samples)
+    random.shuffle(bad_samples)
+
+    min_class_size = min(len(good_samples), len(bad_samples))
+    stratified_samples = [*good_samples[:min_class_size], *bad_samples[:min_class_size]]
+    random.shuffle(stratified_samples)
+    return stratified_samples
 
 
 @click.command(context_settings={'show_default': True})
@@ -39,8 +79,9 @@ def main(
         )
     )
 
-    # Load images & run DQA
     samples = []
+
+    all_files = []
     for dir_name in ['good', 'bad']:
         dir = training_dir / dir_name
         file_extensions = ['png', 'jpg', 'jpeg']
@@ -48,21 +89,22 @@ def main(
         if smoke_test:
             files = files[:10]
 
-        for file in tqdm(files, desc=f"Processing images in {dir}"):
-            image = scanbotsdk.ImageRef.from_path(file)
-            character_level_annotations = document_quality_analyzer.get_character_level_annotations(image=image)
-            api_version = character_level_annotations.api_version
-            sample = dict(
-                label=1 if dir_name == 'good' else 0,
-                image_path=file,
-                character_level_annotations=pd.DataFrame(
-                    get_character_properties(character_level_annotations, all_features)
-                ),
-            )
-            if len(character_level_annotations.annotations) == 0:
-                print(f"Skipping {file} because no characters could be detected")
-                continue
-            samples.append(sample)
+        for file in files:
+            all_files.append((file, dir_name))
+
+    with ThreadPoolExecutor(max_workers=num_jobs) as executor:
+        process_func = partial(process_image, document_quality_analyzer=document_quality_analyzer)
+        future_to_file = {
+            executor.submit(process_func, file, dir_name): (file, dir_name)
+            for file, dir_name in all_files
+        }
+
+        for future in tqdm(as_completed(future_to_file), total=len(all_files), desc="Processing images"):
+            sample = future.result()
+            if sample is not None:
+                samples.append(sample)
+
+    api_version = samples[0]['api_version'] if samples else None
 
     if len(samples) == 0:
         raise ValueError("No samples found")
@@ -76,7 +118,7 @@ def main(
         ('svm', OpenCVSVMClassifier.OpenCVSVMClassifier())
     ])
 
-    random.shuffle(samples)
+    samples = stratify_samples(samples)
 
     X = pd.DataFrame(samples)
     y = pd.Series([sample['label'] for sample in samples])

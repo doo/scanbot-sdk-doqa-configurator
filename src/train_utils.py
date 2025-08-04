@@ -36,9 +36,14 @@ def get_character_properties(
 def best_low_complexity(cv_results):
     """
     Balance model complexity with cross-validated score.
+
+    Idea for the future:
+    Instead of this trade-off, we could use the following approach to compute the optimum number of clusters:
+    Increase the number of clusters until there are too many clusters which are too poorly represented in the training set,
+    e.g. more than 3 clusters with less than 100 characters or only characters from fewer than 3 documents.
     """
     best_accuracy = np.max(cv_results["mean_test_accuracy"])
-    threshold = best_accuracy * 0.97
+    threshold = best_accuracy * 0.997
     candidate_idx = np.flatnonzero(cv_results["mean_test_accuracy"] >= threshold)
     best_idx = candidate_idx[
         cv_results["param_clustering__n_clusters"][candidate_idx].argmin()

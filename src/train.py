@@ -1,23 +1,27 @@
+import base64
+import gzip
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
 from pathlib import Path
+
+import CharacterClusteringTransformer
 import click
+import OpenCVSVMClassifier
 import pandas as pd
 import scanbotsdk
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from tqdm import tqdm
-import gzip
-import base64
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partial
-
-from train_utils import all_features, get_character_properties, best_low_complexity
 from train_plot import plot_grid_search
-import CharacterClusteringTransformer
-import OpenCVSVMClassifier
+from train_utils import all_features, best_low_complexity, get_character_properties
 
 
-def process_image(file, dir_name, document_quality_analyzer: scanbotsdk.DocumentQualityAnalyzerTrainingDataAnnotator):
+def process_image(
+    file,
+    dir_name,
+    document_quality_analyzer: scanbotsdk.DocumentQualityAnalyzerTrainingDataAnnotator,
+):
     """Process a single image file and return sample data."""
     try:
         image = scanbotsdk.ImageRef.from_path(file)
@@ -35,7 +39,7 @@ def process_image(file, dir_name, document_quality_analyzer: scanbotsdk.Document
             character_level_annotations=pd.DataFrame(
                 get_character_properties(character_level_annotations, all_features)
             ),
-            api_version=api_version
+            api_version=api_version,
         )
         return sample
     except Exception as e:
@@ -45,18 +49,19 @@ def process_image(file, dir_name, document_quality_analyzer: scanbotsdk.Document
 
 @click.command(context_settings={'show_default': True})
 @click.option('--scanbotsdk_license_key', type=str, required=True, help='Scanbot SDK license key')
-@click.option('--training_dir', type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
-              default=Path(__file__).parent.parent / "data",
-              help='Directory containing training images in the subfolders "good" and "bad"')
+@click.option(
+    '--training_dir',
+    type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
+    default=Path(__file__).parent.parent / "data",
+    help='Directory containing training images in the subfolders "good" and "bad"',
+)
 @click.option('--num_jobs', type=int, default=4, help='Number of parallel jobs for training')
 @click.option('--smoke_test', is_flag=True, help='Run a smoke test with a small subset of the data')
-@click.option('--plot', is_flag=True, help='Create a plot of the grid search results', default=False)
+@click.option(
+    '--plot', is_flag=True, help='Create a plot of the grid search results', default=False
+)
 def main(
-        scanbotsdk_license_key: str,
-        training_dir: Path,
-        num_jobs: int,
-        smoke_test: bool,
-        plot: bool
+    scanbotsdk_license_key: str, training_dir: Path, num_jobs: int, smoke_test: bool, plot: bool
 ):
     scanbotsdk.initialize(scanbotsdk_license_key)
     document_quality_analyzer = scanbotsdk.DocumentQualityAnalyzerTrainingDataAnnotator()
@@ -81,7 +86,9 @@ def main(
             for file, dir_name in all_files
         }
 
-        for future in tqdm(as_completed(future_to_file), total=len(all_files), desc="Processing images"):
+        for future in tqdm(
+            as_completed(future_to_file), total=len(all_files), desc="Processing images"
+        ):
             sample = future.result()
             if sample is not None:
                 samples.append(sample)
@@ -96,10 +103,12 @@ def main(
     if 0 not in labels or 1 not in labels:
         raise ValueError(f"Missing samples from one class. Found labels: {set(labels)}")
 
-    pipeline = Pipeline([
-        ('clustering', CharacterClusteringTransformer.CharacterClusteringTransformer()),
-        ('svm', OpenCVSVMClassifier.OpenCVSVMClassifier())
-    ])
+    pipeline = Pipeline(
+        [
+            ('clustering', CharacterClusteringTransformer.CharacterClusteringTransformer()),
+            ('svm', OpenCVSVMClassifier.OpenCVSVMClassifier()),
+        ]
+    )
 
     X = pd.DataFrame(samples)
     y = pd.Series([sample['label'] for sample in samples])
@@ -107,14 +116,17 @@ def main(
     num_positive = sum(y)
     num_negative = len(y) - num_positive
     if num_positive < 5 or num_negative < 5:
-        raise ValueError(f"Not enough samples for training. \n"
-                         f"Please provide at least 5 samples for each class. \n"
-                         f"Positive: {num_positive}, Negative: {num_negative}")
-
+        raise ValueError(
+            f"Not enough samples for training. \n"
+            f"Please provide at least 5 samples for each class. \n"
+            f"Positive: {num_positive}, Negative: {num_negative}"
+        )
 
     scoring = {
         "accuracy": "balanced_accuracy",
-        "num_support_vectors": lambda estimator, X, y: estimator.named_steps['svm'].get_num_support_vectors(),
+        "num_support_vectors": lambda estimator, X, y: estimator.named_steps[
+            'svm'
+        ].get_num_support_vectors(),
     }
 
     param_grid = {
@@ -125,11 +137,11 @@ def main(
         ],
         "svm__C": [1.0, 5.0, 10.0, 20.0, 40.0, 80.0],
         "svm__gamma_factor": [0.5, 1.0, 2.0, 4.0, 8.0],
-        "svm__kernel": ['rbf']
+        "svm__kernel": ['rbf'],
     }
     if smoke_test:
-        param_grid["clustering__n_clusters"] = range(6, 10, 15)
-        param_grid["svm__C"] = 1.0,
+        param_grid["clustering__n_clusters"] = list(range(6, 10, 15))
+        param_grid["svm__C"] = [1.0]
 
     clf = GridSearchCV(
         estimator=pipeline,
@@ -140,7 +152,7 @@ def main(
         refit=best_low_complexity,
         error_score="raise",
         scoring=scoring,
-        return_train_score=True
+        return_train_score=True,
     )
     clf.fit(X, y)
 
@@ -154,7 +166,7 @@ def main(
             type='SVM',
             api_version=api_version,
             **clf.best_estimator_.named_steps['svm'].export(),
-            **clf.best_estimator_.named_steps['clustering'].export()
+            **clf.best_estimator_.named_steps['clustering'].export(),
         )
         json_string = json.dumps(config, indent=None, separators=(',', ': '))
         gzipped = gzip.compress(json_string.encode('utf-8'))
@@ -164,7 +176,9 @@ def main(
     print(f"DoQA config saved to {model_path}")
     print(f"Cross-validation accuracy: {clf.cv_results_['mean_test_accuracy'][clf.best_index_]}")
     print(f"Parameters: {clf.best_params_}")
-    print(f"Number of support vectors: {clf.best_estimator_.named_steps['svm'].get_num_support_vectors()}")
+    print(
+        f"Number of support vectors: {clf.best_estimator_.named_steps['svm'].get_num_support_vectors()}"
+    )
 
     pred = clf.predict(X)
     predictions_report = []

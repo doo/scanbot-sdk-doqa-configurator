@@ -2,14 +2,19 @@ import numpy as np
 import scanbotsdk
 
 all_features = [
-    "Contrast", "Ocrability", "FontSize", "Orientation", "OrientationNormalized", "OrientationDeviation"
+    "Contrast",
+    "Ocrability",
+    "FontSize",
+    "Orientation",
+    "OrientationNormalized",
+    "OrientationDeviation",
 ]
 
+
 def get_character_properties(
-        character_level_annotations: scanbotsdk.CharacterLevelAnnotations,
-        cluster_features: [str]
+    character_level_annotations: scanbotsdk.CharacterLevelAnnotations, cluster_features: list[str]
 ):
-    results: [dict] = []
+    results: list[dict] = []
 
     for character_level_annotation in character_level_annotations.annotations:
         result = {}
@@ -33,6 +38,7 @@ def get_character_properties(
 
     return results
 
+
 def best_low_complexity(cv_results):
     """
     Balance model complexity with cross-validated score.
@@ -45,7 +51,5 @@ def best_low_complexity(cv_results):
     best_accuracy = np.max(cv_results["mean_test_accuracy"])
     threshold = best_accuracy * 0.997
     candidate_idx = np.flatnonzero(cv_results["mean_test_accuracy"] >= threshold)
-    best_idx = candidate_idx[
-        cv_results["param_clustering__n_clusters"][candidate_idx].argmin()
-    ]
+    best_idx = candidate_idx[cv_results["param_clustering__n_clusters"][candidate_idx].argmin()]
     return best_idx

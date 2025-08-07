@@ -1,13 +1,13 @@
 import tempfile
 from pathlib import Path
 
-import numpy as np
 import cv2
+import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 
 class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
-    def __init__(self, kernel: str = None, C: float = None, gamma_factor: float = None):
+    def __init__(self, kernel: str = "", C: float = 0.0, gamma_factor: float = 0.0):
         self.kernel = kernel
         self.C = C
         self.gamma_factor = gamma_factor
@@ -18,7 +18,7 @@ class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
             'linear': cv2.ml.SVM_LINEAR,
             'poly': cv2.ml.SVM_POLY,
             'rbf': cv2.ml.SVM_RBF,
-            'sigmoid': cv2.ml.SVM_SIGMOID
+            'sigmoid': cv2.ml.SVM_SIGMOID,
         }
         return kernel_map.get(self.kernel, cv2.ml.SVM_LINEAR)
 
@@ -40,8 +40,7 @@ class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
         num_negative = np.sum(y == 0)
         if num_positive == 0 or num_negative == 0:
             raise ValueError("Training data does not contain enough good or bad samples")
-        class_weights = np.array([1.0, num_negative / num_positive],
-                                 dtype=np.float32)
+        class_weights = np.array([1.0, num_negative / num_positive], dtype=np.float32)
         self.svm_.setClassWeights(class_weights)
 
         self.svm_.train(X, cv2.ml.ROW_SAMPLE, y)
@@ -58,6 +57,7 @@ class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
 
     def score(self, X, y, sample_weight=None):
         from sklearn.metrics import accuracy_score
+
         y_pred = self.predict(X)
         return accuracy_score(y, y_pred)
 

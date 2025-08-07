@@ -36,6 +36,14 @@ class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
         gamma = self.gamma_factor / (X.shape[0] * X.var())
         self.svm_.setGamma(gamma)
 
+        num_positive = np.sum(y == 1)
+        num_negative = np.sum(y == 0)
+        if num_positive == 0 or num_negative == 0:
+            raise ValueError("Training data does not contain enough good or bad samples")
+        class_weights = np.array([1.0, num_negative / num_positive],
+                                 dtype=np.float32)
+        self.svm_.setClassWeights(class_weights)
+
         self.svm_.train(X, cv2.ml.ROW_SAMPLE, y)
         return self
 

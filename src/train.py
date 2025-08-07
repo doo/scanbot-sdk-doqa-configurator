@@ -1,10 +1,9 @@
 import json
-import random
 from pathlib import Path
 import click
 import pandas as pd
 import scanbotsdk
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_split
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from tqdm import tqdm
 import gzip
@@ -18,11 +17,12 @@ import CharacterClusteringTransformer
 import OpenCVSVMClassifier
 
 
-def process_image(file, dir_name, document_quality_analyzer):
+def process_image(file, dir_name, document_quality_analyzer: scanbotsdk.DocumentQualityAnalyzerTrainingDataAnnotator):
     """Process a single image file and return sample data."""
     try:
         image = scanbotsdk.ImageRef.from_path(file)
-        character_level_annotations = document_quality_analyzer.get_character_level_annotations(image=image)
+        result = document_quality_analyzer.run(image=image)
+        character_level_annotations = result.character_level_annotations
         api_version = character_level_annotations.api_version
 
         if len(character_level_annotations.annotations) == 0:
@@ -43,19 +43,6 @@ def process_image(file, dir_name, document_quality_analyzer):
         return None
 
 
-def stratify_samples(samples):
-    good_samples = [s for s in samples if s['label'] == 1]
-    bad_samples = [s for s in samples if s['label'] == 0]
-
-    random.shuffle(good_samples)
-    random.shuffle(bad_samples)
-
-    min_class_size = min(len(good_samples), len(bad_samples))
-    stratified_samples = [*good_samples[:min_class_size], *bad_samples[:min_class_size]]
-    random.shuffle(stratified_samples)
-    return stratified_samples
-
-
 @click.command(context_settings={'show_default': True})
 @click.option('--scanbotsdk_license_key', type=str, required=True, help='Scanbot SDK license key')
 @click.option('--training_dir', type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
@@ -72,12 +59,7 @@ def main(
         plot: bool
 ):
     scanbotsdk.initialize(scanbotsdk_license_key)
-    document_quality_analyzer = scanbotsdk.DocumentQualityAnalyzer(
-        configuration=scanbotsdk.DocumentQualityAnalyzerConfiguration(
-            min_processed_fraction=1.0,
-            max_processed_fraction=1.0,
-        )
-    )
+    document_quality_analyzer = scanbotsdk.DocumentQualityAnalyzerTrainingDataAnnotator()
 
     samples = []
 
@@ -105,6 +87,7 @@ def main(
                 samples.append(sample)
 
     api_version = samples[0]['api_version'] if samples else None
+    print(f"API version: {api_version}")
 
     if len(samples) == 0:
         raise ValueError("No samples found")
@@ -118,13 +101,19 @@ def main(
         ('svm', OpenCVSVMClassifier.OpenCVSVMClassifier())
     ])
 
-    samples = stratify_samples(samples)
-
     X = pd.DataFrame(samples)
     y = pd.Series([sample['label'] for sample in samples])
 
+    num_positive = sum(y)
+    num_negative = len(y) - num_positive
+    if num_positive < 5 or num_negative < 5:
+        raise ValueError(f"Not enough samples for training. \n"
+                         f"Please provide at least 5 samples for each class. \n"
+                         f"Positive: {num_positive}, Negative: {num_negative}")
+
+
     scoring = {
-        "accuracy": "accuracy",
+        "accuracy": "balanced_accuracy",
         "num_support_vectors": lambda estimator, X, y: estimator.named_steps['svm'].get_num_support_vectors(),
     }
 
@@ -145,7 +134,7 @@ def main(
     clf = GridSearchCV(
         estimator=pipeline,
         param_grid=param_grid,
-        cv=5,
+        cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
         verbose=10,
         n_jobs=num_jobs,
         refit=best_low_complexity,
@@ -173,7 +162,7 @@ def main(
         f.write(b64_encoded)
 
     print(f"DoQA config saved to {model_path}")
-    print(f"Cross-validation accuracy: {clf.cv_results_['mean_train_accuracy'][clf.best_index_]}")
+    print(f"Cross-validation accuracy: {clf.cv_results_['mean_test_accuracy'][clf.best_index_]}")
     print(f"Parameters: {clf.best_params_}")
     print(f"Number of support vectors: {clf.best_estimator_.named_steps['svm'].get_num_support_vectors()}")
 

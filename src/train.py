@@ -20,7 +20,7 @@ from train_utils import all_features, best_low_complexity, get_character_propert
 
 def process_image(
     file,
-    dir_name,
+    label,
     document_quality_analyzer: scanbotsdk.DocumentQualityAnalyzerTrainingDataAnnotator,
 ):
     """Process a single image file and return sample data."""
@@ -35,7 +35,7 @@ def process_image(
             return None
 
         sample = dict(
-            label=1 if dir_name == 'good' else 0,
+            label=label,
             image_path=file,
             character_level_annotations=pd.DataFrame(
                 get_character_properties(character_level_annotations, all_features)
@@ -83,7 +83,7 @@ def main(
     with ThreadPoolExecutor(max_workers=num_jobs) as executor:
         process_func = partial(process_image, document_quality_analyzer=document_quality_analyzer)
         future_to_file = {
-            executor.submit(process_func, file, dir_name): (file, dir_name)
+            executor.submit(process_func, file, 1 if dir_name == 'good' else 0): (file, dir_name)
             for file, dir_name in all_files
         }
 

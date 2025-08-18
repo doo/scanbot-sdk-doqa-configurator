@@ -1,6 +1,7 @@
 import base64
 import gzip
 import json
+import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
@@ -93,11 +94,13 @@ def main(
             if sample is not None:
                 samples.append(sample)
 
+    if len(samples) == 0:
+        raise ValueError("No samples found")
+
     api_version = samples[0]['api_version'] if samples else None
     print(f"API version: {api_version}")
 
-    if len(samples) == 0:
-        raise ValueError("No samples found")
+    random.shuffle(samples)
 
     labels = [s['label'] for s in samples]
     if 0 not in labels or 1 not in labels:

@@ -109,8 +109,20 @@ def plot_stacked_area_uncertainty(
         tn_counts.append(tn / total_samples * 100)
         fn_counts.append(fn / total_samples * 100)
 
-    fig = go.Figure()
+    # Calculate performance metrics
+    correct_counts = [tp + tn for tp, tn in zip(tp_counts, tn_counts)]
+    incorrect_counts = [fp + fn for fp, fn in zip(fp_counts, fn_counts)]
+    uncertain_counts = [up + un for up, un in zip(up_counts, un_counts)]
 
+    # Create subplot figure
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=("Classification results", "Classification performance"),
+        horizontal_spacing=0.1,
+    )
+
+    # First subplot: Original stacked area chart
     fig.add_trace(
         go.Scatter(
             x=thresholds,
@@ -120,7 +132,10 @@ def plot_stacked_area_uncertainty(
             name='True Negatives ("unacceptable" document correctly classified)',
             fillcolor='rgba(0, 0, 255, 0.7)',
             stackgroup='one',
-        )
+            legendgroup='classification',
+        ),
+        row=1,
+        col=1,
     )
 
     fig.add_trace(
@@ -132,7 +147,10 @@ def plot_stacked_area_uncertainty(
             name='False Positives ("unacceptable" document classified as "acceptable")',
             fillcolor='rgba(128, 0, 128, 0.7)',
             stackgroup='one',
-        )
+            legendgroup='classification',
+        ),
+        row=1,
+        col=1,
     )
 
     fig.add_trace(
@@ -144,7 +162,10 @@ def plot_stacked_area_uncertainty(
             name='Uncertain Negatives ("unacceptable" document classified as "uncertain")',
             fillcolor='rgba(255, 165, 0, 0.5)',
             stackgroup='one',
-        )
+            legendgroup='classification',
+        ),
+        row=1,
+        col=1,
     )
 
     fig.add_trace(
@@ -156,7 +177,10 @@ def plot_stacked_area_uncertainty(
             name='Uncertain Positives ("acceptable" document classified as "uncertain")',
             fillcolor='rgba(0, 255, 0, 0.5)',
             stackgroup='one',
-        )
+            legendgroup='classification',
+        ),
+        row=1,
+        col=1,
     )
 
     fig.add_trace(
@@ -168,7 +192,10 @@ def plot_stacked_area_uncertainty(
             name='False Negatives ("acceptable" document classified as "unacceptable")',
             fillcolor='rgba(255, 0, 0, 0.7)',
             stackgroup='one',
-        )
+            legendgroup='classification',
+        ),
+        row=1,
+        col=1,
     )
 
     fig.add_trace(
@@ -180,22 +207,68 @@ def plot_stacked_area_uncertainty(
             name='True Positives ("acceptable" document correctly classified)',
             fillcolor='rgba(0, 128, 0, 0.7)',
             stackgroup='one',
-        )
+            legendgroup='classification',
+        ),
+        row=1,
+        col=1,
+    )
+
+    # Second subplot: Performance metrics
+    fig.add_trace(
+        go.Scatter(
+            x=thresholds,
+            y=correct_counts,
+            mode='lines',
+            name='Correctly labeled samples',
+            line=dict(color='green', width=3),
+            legendgroup='performance',
+        ),
+        row=1,
+        col=2,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=thresholds,
+            y=incorrect_counts,
+            mode='lines',
+            name='Incorrectly labeled samples',
+            line=dict(color='red', width=3),
+            legendgroup='performance',
+        ),
+        row=1,
+        col=2,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=thresholds,
+            y=uncertain_counts,
+            mode='lines',
+            name='Uncertain labeled samples',
+            line=dict(color='orange', width=3),
+            legendgroup='performance',
+        ),
+        row=1,
+        col=2,
     )
 
     fig.update_layout(
-        xaxis_title='Uncertainty Threshold',
-        yaxis_title='Percentage of Training Samples (%)',
-        hovermode='x unified',
-        width=800,
+        width=1200,
         height=700,
-        legend=dict(orientation="h", yanchor="top", y=-0.2, xanchor="center", x=0.5),
+        hovermode='x unified',
+        legend=dict(orientation="h", yanchor="top", y=-0.1, xanchor="center", x=0.5),
     )
+
+    fig.update_xaxes(title_text='Uncertainty Threshold', row=1, col=1)
+    fig.update_xaxes(title_text='Uncertainty Threshold', row=1, col=2)
+    fig.update_yaxes(title_text='Percentage of Training Samples (%)', row=1, col=1)
+    fig.update_yaxes(title_text='Percentage of Training Samples (%)', row=1, col=2)
 
     if output_dir:
         html_plot_path = Path(output_dir) / 'uncertainty_analysis.html'
         fig.write_html(str(html_plot_path))
-        fig.write_image(str(Path(output_dir) / 'uncertainty_analysis.svg'))
+        fig.write_image(str(Path(output_dir) / 'uncertainty_analysis.svg'), width=1200, height=700)
         print(f"Uncertainty analysis plot saved to {html_plot_path}")
 
     return fig

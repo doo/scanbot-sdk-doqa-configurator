@@ -6,12 +6,13 @@ import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 
-class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
+class OpenCVSVMClassifier(ClassifierMixin, BaseEstimator):
     def __init__(self, kernel: str = "", C: float = 0.0, gamma_factor: float = 0.0):
         self.kernel = kernel
         self.C = C
         self.gamma_factor = gamma_factor
         self.svm_ = None  # Read by scikit-learn's check_is_fitted
+        self.classes_ = np.array([0, 1], dtype=np.int32)
 
     def _get_kernel_type(self):
         kernel_map = {
@@ -51,15 +52,23 @@ class OpenCVSVMClassifier(BaseEstimator, ClassifierMixin):
         _, y_pred = self.svm_.predict(X)
         return y_pred.ravel()
 
+    def decision_function(self, X):
+        X = np.asarray(X, dtype=np.float32)
+        _, y_pred = self.svm_.predict(X, flags=cv2.ml.STAT_MODEL_RAW_OUTPUT)
+        # SVM predicts < 0 for y = 1, which is unintuitive, so we invert it
+        result = -y_pred.ravel()
+        assert np.all((result >= 0) == self.predict(X))
+        return result
+
     def get_num_support_vectors(self):
         assert self.svm_ is not None, "Model must be fitted before getting support vectors"
         return self.svm_.getSupportVectors().shape[0]
 
     def score(self, X, y, sample_weight=None):
-        from sklearn.metrics import accuracy_score
+        from sklearn.metrics import balanced_accuracy_score
 
         y_pred = self.predict(X)
-        return accuracy_score(y, y_pred)
+        return balanced_accuracy_score(y, y_pred)
 
     def get_params(self, deep=True):
         return {

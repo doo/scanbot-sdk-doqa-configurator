@@ -37,3 +37,20 @@ To run this tool, you need to have the following:
   docker compose run --build --rm sbsdk-doqa-configurator --scanbotsdk_license_key=YOUR_LICENSE_KEY
   ```
 - Your config will be created in `data/DoQA_config.txt`. Please provide the contents of this file during the configuration of the Scanbot SDK.
+- A report will be generated in `data/training_report.html` that shows what performance you can expect from your new configuration.
+- A debug file will `data/DoQA_config_debug.pkl` generated (see usage below).
+
+## Debugging
+
+If you find that after creating a custom DoQA configuration, the output of the DoQA is not satisfactory, we provide some tools to understand what might be going wrong.
+
+Usage:
+
+- The folders `data/bad` & `data/good` need to contain the same images as they did when you created the DoQA configuration.
+- The file `data/DoQA_config_debug.pkl` from your training needs to be present.
+- Place the images that yield unexpected DoQA results and you would like to examine in the folder `data/explain` (JPEG or PNG).
+- Run the following command
+  ```
+  docker compose run --build --rm --entrypoint python sbsdk-doqa-configurator /app/explain.py --scanbotsdk_license_key=YOUR_LICENSE_KEY
+  ```
+  The command will generate one report HTML in `data/explain` for every image in that folder. These reports can help you understand how the DoQA operates and what you can do to improve its performance.

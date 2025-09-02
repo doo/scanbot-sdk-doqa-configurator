@@ -3,9 +3,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from configurator_utils import ThresholdWaypoints
 from plotly.subplots import make_subplots
 from sklearn.model_selection import GridSearchCV
-from train_utils import ThresholdWaypoints
 from UncertaintyThresholdClassifier import UncertaintyThresholdClassifier
 
 
@@ -109,12 +109,10 @@ def plot_stacked_area_uncertainty(
         tn_counts.append(tn / total_samples * 100)
         fn_counts.append(fn / total_samples * 100)
 
-    # Calculate performance metrics
     correct_counts = [tp + tn for tp, tn in zip(tp_counts, tn_counts)]
     incorrect_counts = [fp + fn for fp, fn in zip(fp_counts, fn_counts)]
     uncertain_counts = [up + un for up, un in zip(up_counts, un_counts)]
 
-    # Create subplot figure
     fig = make_subplots(
         rows=1,
         cols=2,
@@ -122,7 +120,7 @@ def plot_stacked_area_uncertainty(
         horizontal_spacing=0.1,
     )
 
-    # First subplot: Original stacked area chart
+    # First subplot: Stacked area chart
     fig.add_trace(
         go.Scatter(
             x=thresholds,
@@ -268,7 +266,6 @@ def plot_stacked_area_uncertainty(
     if output_dir:
         html_plot_path = Path(output_dir) / 'uncertainty_analysis.html'
         fig.write_html(str(html_plot_path))
-        fig.write_image(str(Path(output_dir) / 'uncertainty_analysis.svg'), width=1200, height=700)
         print(f"Uncertainty analysis plot saved to {html_plot_path}")
 
     return fig

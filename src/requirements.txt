@@ -6,3 +6,7 @@ tqdm
 wget
 opencv-python
 plotly
+papermill
+nbconvert
+notebook
+matplotlib

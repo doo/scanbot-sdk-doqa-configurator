@@ -21,6 +21,7 @@ from configurator_utils import (
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from train_plots import plot_grid_search, plot_stacked_area_uncertainty
+from tsne_plot import tsne_plot
 
 
 @click.command(context_settings={'show_default': True})
@@ -156,6 +157,7 @@ def main(
 
     if plot:
         plot_grid_search(clf, training_dir)
+        tsne_plot(training_dir=training_dir, pipeline=pipeline, X=X)
 
     threshold_waypoints = ThresholdWaypoints(
         threshold_values_0p5=[0.0, 0.0],

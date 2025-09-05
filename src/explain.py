@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import click
-from configurator_utils import render_notebook
+from configurator_utils import image_extensions, render_notebook
 
 
 @click.command(context_settings={'show_default': True})
@@ -22,7 +22,7 @@ def main(
     assert config_debug_path.exists(), f"File {config_debug_path} does not exist"
 
     for file in explain_dir.iterdir():
-        if file.suffix in {".png", ".jpg", ".jpeg"}:
+        if file.suffix in image_extensions:
             render_notebook(
                 notebook_path=Path(__file__).parent / "explain_report.ipynb",
                 parameters=dict(

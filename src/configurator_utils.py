@@ -120,8 +120,7 @@ def load_samples_from_training_dir(
     all_files = []
     for dir_name in ['good', 'bad']:
         dir = Path(training_dir) / dir_name
-        file_extensions = ['png', 'jpg', 'jpeg']
-        files = [file for ext in file_extensions for file in dir.glob(f'*.{ext}')]
+        files = [file for ext in image_extensions for file in dir.glob(f'*{ext}')]
         if smoke_test:
             files = files[:20]
 
@@ -169,3 +168,6 @@ def render_notebook(notebook_path: Path, parameters: dict, output_path: Path):
 def pickle_dump(obj, path: Path):
     with open(path, "wb") as f:
         pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+image_extensions = ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG']

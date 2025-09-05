@@ -15,7 +15,7 @@ It uses the TSNE algorithm from sklearn to reduce the dimensionality of the clus
 
 def tsne_plot(training_dir: Path, pipeline, X: pd.DataFrame):
     clusters = pd.DataFrame(pipeline.named_steps['clustering'].transform(X))
-    tsne = TSNE(n_components=3, random_state=0)
+    tsne = TSNE(n_components=3, random_state=0, perplexity=min(30, (len(clusters) - 1) // 3))
     projections = tsne.fit_transform(clusters)
 
     # Function to convert image to base64

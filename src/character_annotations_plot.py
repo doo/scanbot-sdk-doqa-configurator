@@ -4,6 +4,7 @@ import cv2 as cv
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+import numpy as np
 import scanbotsdk
 
 
@@ -24,9 +25,21 @@ def plot_annotations(image_path: Path, annotations: scanbotsdk.DocumentQualityAn
         vmin, vmax = min(all_values), max(all_values)
         if metric_name == "Orientation":
             vmin, vmax = -180, 180
+        elif metric_name == "Ocrability" or metric_name == "Contrast":
+            vmin, vmax = 0, 1
 
         norm = colors.Normalize(vmin=vmin, vmax=vmax)
-        cmap = plt.cm.viridis
+
+        if metric_name == "Orientation":
+            cm_colors = np.vstack(
+                [
+                    plt.cm.RdYlGn(np.linspace(0, 1, plt.cm.RdYlGn.N)),
+                    plt.cm.RdYlGn.reversed()(np.linspace(0, 1, plt.cm.RdYlGn.N)),
+                ]
+            )
+            cmap = colors.ListedColormap(cm_colors)
+        else:
+            cmap = plt.cm.RdYlGn
 
         for char in character_level_annotations.annotations:
             value = metric_values_func(char)
@@ -59,7 +72,7 @@ def plot_annotations(image_path: Path, annotations: scanbotsdk.DocumentQualityAn
     create_metric_plot('Font_Size', lambda char: char.font_size, fig, ax2a)
     create_metric_plot('Ocrability', lambda char: char.ocrability, fig, ax3a)
     create_metric_plot('Contrast', lambda char: char.contrast, fig, ax4a)
-    create_metric_plot('Orientation', lambda char: char.orientation, fig, ax5a)
+    create_metric_plot('Orientation', lambda char: char.orientation_normalized, fig, ax5a)
 
     plt.tight_layout()
 

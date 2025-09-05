@@ -20,7 +20,7 @@ from configurator_utils import (
 )
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.pipeline import Pipeline
-from train_plots import plot_grid_search, plot_stacked_area_uncertainty
+from train_plots import plot_classification, plot_grid_search
 from tsne_plot import tsne_plot
 
 
@@ -114,10 +114,12 @@ def main(
     }
     if smoke_test:
         param_grid = {
-            "clustering__n_clusters": [35],
-            "clustering__cluster_features": param_grid["clustering__cluster_features"][:1],
-            "svm__C": [20],
-            "svm__gamma_factor": [4],
+            "clustering__n_clusters": [10],
+            "clustering__cluster_features": [
+                ["Contrast", "Ocrability", "FontSize", "OrientationDeviation"]
+            ],
+            "svm__C": [40],
+            "svm__gamma_factor": [8],
             "svm__kernel": param_grid["svm__kernel"][:1],
         }
 
@@ -219,7 +221,7 @@ def main(
     )
 
     if plot:
-        plot_stacked_area_uncertainty(
+        plot_classification(
             y=y,
             y_pred=y_cv_pred,
             threshold_waypoints=threshold_waypoints,
@@ -264,7 +266,7 @@ def main(
     print(f"DoQA config saved to {model_path}")
     print(f"Cross-validation accuracy: {clf.cv_results_['mean_test_accuracy'][best_index]}")
     print(f"Accuracy on training set: {pipeline.score(X_train, y_train)}")
-    print(f"Parameters: {pipeline.get_params()}")
+    print(f"Parameters: {pipeline.get_params()['steps']}")
     print(f"Number of support vectors: {pipeline.named_steps['svm'].get_num_support_vectors()}")
     print(f"Threshold waypoints: {threshold_waypoints}")
 
@@ -272,11 +274,13 @@ def main(
     pickle_file = training_dir / "DoQA_config.pkl"
     pickle_dump(
         dict(
+            X=X[['image_path', 'label']],
             y=y,
             y_cv_pred=y_cv_pred,
             threshold_waypoints=threshold_waypoints,
             training_dir=str(training_dir),
             model_path=model_path,
+            model_config=b64_encoded,
             mean_test_accuracy=clf.cv_results_['mean_test_accuracy'][best_index],
         ),
         pickle_file,

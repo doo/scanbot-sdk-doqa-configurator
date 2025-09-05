@@ -114,10 +114,21 @@ def plot_classification(
     uncertain_counts = [up + un for up, un in zip(up_counts, un_counts)]
 
     fig = make_subplots(
-        rows=1,
+        rows=2,
         cols=2,
-        subplot_titles=("Classification results", "Classification performance"),
+        subplot_titles=(
+            "Classification results",
+            "Classification performance",
+            "",
+            "Threshold Analysis",
+        ),
+        specs=[
+            [{"secondary_y": False}, {"secondary_y": False}],
+            [{"type": "table", "colspan": 2}, None],
+        ],
         horizontal_spacing=0.1,
+        vertical_spacing=0.4,
+        row_heights=[0.7, 0.3],
     )
     # First subplot: Stacked area chart
     fig.add_trace(
@@ -214,10 +225,10 @@ def plot_classification(
     fig.add_trace(
         go.Scatter(
             x=thresholds,
-            y=correct_counts,
+            y=uncertain_counts,
             mode='lines',
-            name='% Correct',
-            line=dict(color='green', width=3),
+            name='% Uncertain',
+            line=dict(color='orange', width=3),
             legendgroup='performance',
         ),
         row=1,
@@ -240,21 +251,61 @@ def plot_classification(
     fig.add_trace(
         go.Scatter(
             x=thresholds,
-            y=uncertain_counts,
+            y=correct_counts,
             mode='lines',
-            name='% Uncertain',
-            line=dict(color='orange', width=3),
+            name='% Correct',
+            line=dict(color='green', width=3),
             legendgroup='performance',
         ),
         row=1,
         col=2,
     )
 
+    # Third subplot: Threshold analysis table
+    sample_thresholds = [0, 0.3, 0.5, 0.7]
+    table_data = []
+
+    for threshold in sample_thresholds:
+        idx = int(threshold * 100)  # Find closest index in thresholds array
+        correct_pct = correct_counts[idx]
+        uncertain_pct = uncertain_counts[idx]
+        incorrect_pct = incorrect_counts[idx]
+
+        table_data.append(
+            {
+                'Uncertainty Threshold': f"{threshold:.1f}",
+                '% Correct': f"{correct_pct:.0f}%",
+                '% Uncertain': f"{uncertain_pct:.0f}%",
+                '% Incorrect': f"{incorrect_pct:.0f}%",
+            }
+        )
+
+    table_df = pd.DataFrame(table_data)
+
+    fig.add_trace(
+        go.Table(
+            header=dict(
+                values=table_df.columns,
+                fill_color='paleturquoise',
+                align='center',
+                font=dict(size=12),
+            ),
+            cells=dict(
+                values=table_df.transpose(),
+                fill_color='lavender',
+                align='center',
+                font=dict(size=11),
+            ),
+        ),
+        row=2,
+        col=1,
+    )
+
     fig.update_layout(
         width=1200,
-        height=700,
+        height=800,
         hovermode='x unified',
-        legend=dict(orientation="h", yanchor="top", y=-0.1, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="top", y=0.45, xanchor="center", x=0.5),
     )
 
     fig.update_xaxes(title_text='Uncertainty Threshold', row=1, col=1)

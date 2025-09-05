@@ -12,9 +12,11 @@ from configurator_utils import image_extensions, render_notebook
     default=Path(__file__).parent.parent / "data",
     help='Directory containing training images in the subfolders "good" and "bad"',
 )
+@click.option('--num_jobs', type=int, default=4, help='Number of parallel jobs for training')
 def main(
     scanbotsdk_license_key: str,
     training_dir: Path,
+    num_jobs: int,
 ):
     explain_dir: Path = training_dir / "explain"
     assert explain_dir.exists() and explain_dir.is_dir(), f"Directory {explain_dir} does not exist"
@@ -30,6 +32,7 @@ def main(
                     training_dir=str(training_dir),
                     explain_image_path=str(file),
                     config_debug_path=str(config_debug_path),
+                    num_jobs=num_jobs,
                 ),
                 output_path=explain_dir / f"report_{file.stem}.html",
             )

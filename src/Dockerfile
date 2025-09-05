@@ -11,7 +11,7 @@ ARG SCANBOT_SDK_CORE_VERSION
 # Only download the whl file if there isn't already a scanbotsdk*.whl file we can use
 COPY scanbotsdk*.whl /
 RUN if ! ls scanbotsdk*.whl 2>/dev/null; then python /app/download_scanbotsdk_whl.py $SCANBOT_SDK_CORE_VERSION linux_`uname -m`; fi
-RUN ls && pip install scanbotsdk*linux_`uname -m`.whl
+RUN pip install scanbotsdk*linux_`uname -m`.whl
 RUN rm scanbotsdk*.whl
 
 ENTRYPOINT ["python", "/app/train.py"]

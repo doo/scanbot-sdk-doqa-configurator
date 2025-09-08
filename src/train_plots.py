@@ -5,12 +5,10 @@ import pandas as pd
 import plotly.graph_objects as go
 from configurator_utils import ThresholdWaypoints
 from plotly.subplots import make_subplots
-from sklearn.model_selection import GridSearchCV
 from UncertaintyThresholdClassifier import UncertaintyThresholdClassifier
 
 
-def plot_grid_search(clf: GridSearchCV, output_dir: Path):
-    results = pd.DataFrame(clf.cv_results_)
+def plot_grid_search(results, output_dir: Path):
     results['line_label'] = results.apply(
         lambda row: f"{row['param_clustering__cluster_features']},kernel={row['param_svm__kernel']},C={row['param_svm__C']},gamma_factor={row['param_svm__gamma_factor']}",
         axis=1,

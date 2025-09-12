@@ -268,13 +268,19 @@ def plot_classification(
         correct_pct = correct_counts[idx]
         uncertain_pct = uncertain_counts[idx]
         incorrect_pct = incorrect_counts[idx]
+        precision_pct = (
+            (correct_pct / (correct_pct + incorrect_pct)) * 100
+            if (correct_pct + incorrect_pct) > 0
+            else 0
+        )
 
         table_data.append(
             {
                 'Uncertainty Threshold': f"{threshold:.1f}",
-                '% Correct': f"{correct_pct:.0f}%",
-                '% Uncertain': f"{uncertain_pct:.0f}%",
-                '% Incorrect': f"{incorrect_pct:.0f}%",
+                '% correctly classified': f"{correct_pct:.0f}%",
+                '% classified as "uncertain"': f"{uncertain_pct:.0f}%",
+                '% incorrectly classified': f"{incorrect_pct:.0f}%",
+                'Precision<br>(correct / not "uncertain")': f"{precision_pct:.0f}%",
             }
         )
 
@@ -301,7 +307,7 @@ def plot_classification(
 
     fig.update_layout(
         width=1200,
-        height=800,
+        height=900,
         hovermode='x unified',
         legend=dict(orientation="h", yanchor="top", y=0.45, xanchor="center", x=0.5),
     )

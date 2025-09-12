@@ -31,7 +31,7 @@ from tsne_plot import tsne_plot
     '--training_dir',
     type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
     default=Path(__file__).parent.parent / "data",
-    help='Directory containing training images in the subfolders "good" and "bad"',
+    help='Directory containing training images in the subfolders "good" and "bad". Please see the Readme.md for details.',
 )
 @click.option('--num_jobs', type=int, default=4, help='Number of parallel jobs for training')
 @click.option('--smoke_test', is_flag=True, help='Run a smoke test with a small subset of the data')

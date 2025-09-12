@@ -4,13 +4,16 @@ import click
 from configurator_utils import image_extensions, render_notebook
 
 
-@click.command(context_settings={'show_default': True})
+@click.command(
+    context_settings={'show_default': True},
+    help="Generates explanation reports for all images in the 'explain' subfolder of the training directory. See the Readme.md for details.",
+)
 @click.option('--scanbotsdk_license_key', type=str, required=True, help='Scanbot SDK license key')
 @click.option(
     '--training_dir',
     type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
     default=Path(__file__).parent.parent / "data",
-    help='Directory containing training images in the subfolders "good" and "bad"',
+    help='Directory containing training images in the subfolders "good" and "bad". See the Readme.md for details.',
 )
 @click.option('--num_jobs', type=int, default=4, help='Number of parallel jobs for training')
 def main(
@@ -20,6 +23,9 @@ def main(
 ):
     explain_dir: Path = training_dir / "explain"
     assert explain_dir.exists() and explain_dir.is_dir(), f"Directory {explain_dir} does not exist"
+    assert (
+        explain_dir.iterdir()
+    ), f"Directory {explain_dir} is empty. Please add some images that should be explained."
     config_debug_path = training_dir / "DoQA_config_debug.pkl"
     assert config_debug_path.exists(), f"File {config_debug_path} does not exist"
 

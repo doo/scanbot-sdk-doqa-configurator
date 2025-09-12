@@ -22,11 +22,14 @@ def plot_annotations(image_path: Path, annotations: scanbotsdk.DocumentQualityAn
         ax.set_ylim(img_array.shape[0], 0)  # Inverse y-axis for image coordinates
 
         all_values = [metric_values_func(char) for char in character_level_annotations.annotations]
-        vmin, vmax = min(all_values), max(all_values)
         if metric_name == "Orientation":
             vmin, vmax = -180, 180
         elif metric_name == "Ocrability" or metric_name == "Contrast":
             vmin, vmax = 0, 1
+        elif metric_name == "Font_Size":
+            vmin, vmax = min(all_values), max(all_values)
+        else:
+            raise ValueError(f"Unknown metric name: {metric_name}")
 
         norm = colors.Normalize(vmin=vmin, vmax=vmax)
 

@@ -16,9 +16,11 @@ from configurator_utils import (
     ThresholdWaypoints,
     best_low_complexity,
     load_samples_from_training_dir,
+    param_n_pixel_clusters,
     pickle_dump,
     render_notebook,
 )
+from PixelClustering import PixelClusteringTransformer
 from sklearn.model_selection import GridSearchCV, ParameterGrid, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from train_plots import plot_classification, plot_grid_search
@@ -99,6 +101,7 @@ def main(
 
     param_grid_clustering = {
         "clustering__n_clusters": [6, 8, 10, 12, *range(15, 50, 5)],
+        "clustering__n_pixel_clusters": param_n_pixel_clusters,
         "clustering__cluster_features": [
             ["Contrast", "Ocrability", "FontSize"],
             ["Contrast", "Ocrability", "FontSize", "OrientationDeviation"],
@@ -112,6 +115,7 @@ def main(
     if smoke_test:
         param_grid_clustering = {
             "clustering__n_clusters": [10],
+            "clustering__n_pixel_clusters": [10],
             "clustering__cluster_features": [
                 ["Contrast", "Ocrability", "FontSize", "OrientationDeviation"]
             ],
@@ -281,6 +285,7 @@ def main(
             api_version=api_version,
             **pipeline.named_steps['svm'].export(),
             **pipeline.named_steps['clustering'].export(),
+            **PixelClusteringTransformer(best_params["clustering__n_pixel_clusters"]).export(),
             threshold_normalization_points=threshold_waypoints,
         )
         json_string = json.dumps(config, indent=None, separators=(',', ': '))
@@ -290,7 +295,12 @@ def main(
 
     # This pickle file contains the pipeline object to be used in the explainability notebook (see Readme.md)
     pickle_dump(
-        dict(clustering=pipeline.named_steps['clustering']),
+        dict(
+            clustering=pipeline.named_steps['clustering'],
+            pixel_clustering=PixelClusteringTransformer(
+                best_params["clustering__n_pixel_clusters"]
+            ),
+        ),
         training_dir / 'DoQA_config_debug.pkl',
     )
 

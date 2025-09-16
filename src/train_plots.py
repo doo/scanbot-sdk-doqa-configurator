@@ -10,7 +10,7 @@ from UncertaintyThresholdClassifier import UncertaintyThresholdClassifier
 
 def plot_grid_search(results, output_dir: Path):
     results['line_label'] = results.apply(
-        lambda row: f"{row['param_clustering__cluster_features']},kernel={row['param_svm__kernel']},C={row['param_svm__C']},gamma_factor={row['param_svm__gamma_factor']}",
+        lambda row: f"{row['param_clustering__cluster_features']},kernel={row['param_svm__kernel']},C={row['param_svm__C']},gamma_factor={row['param_svm__gamma_factor']},n_pixel_clusters={row['param_clustering__n_pixel_clusters']}",
         axis=1,
     )
 

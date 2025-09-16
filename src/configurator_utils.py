@@ -4,12 +4,14 @@ from functools import partial
 from pathlib import Path
 from typing import TypedDict
 
+import cv2
 import numpy as np
 import pandas as pd
 import papermill as pm
 import scanbotsdk
 from joblib import Memory
 from nbconvert import HTMLExporter
+from PixelClustering import PixelClusteringTransformer
 from tqdm import tqdm
 
 all_features = [
@@ -71,6 +73,9 @@ class ThresholdWaypoints(TypedDict):
     threshold_values_1p0: list[float]
 
 
+param_n_pixel_clusters = [0, 10]
+
+
 def load_samples_from_training_dir(
     training_dir: str,
     smoke_test: bool,
@@ -102,6 +107,8 @@ def load_samples_from_training_dir(
                 print(f"Skipping {file} because no characters could be detected")
                 return None
 
+            gray_pixels = load_gray_pixels_from_image(file)
+
             sample = dict(
                 label=label,
                 image_path=file,
@@ -110,6 +117,11 @@ def load_samples_from_training_dir(
                 ),
                 api_version=api_version,
             )
+            for n_pixel_clusters in param_n_pixel_clusters:
+                hist = PixelClusteringTransformer(n_pixel_clusters=n_pixel_clusters).create_hist(
+                    gray_pixels
+                )
+                sample['pixel_histogram_' + str(n_pixel_clusters)] = hist
             return sample
         except Exception as e:
             print(f"Error processing {file}: {e}")
@@ -171,3 +183,10 @@ def pickle_dump(obj, path: Path):
 
 
 image_extensions = ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG']
+
+
+def load_gray_pixels_from_image(filepath: str):
+    image = cv2.imread(filepath)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    pixels = image.reshape(-1, 1)
+    return pixels

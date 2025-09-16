@@ -5,11 +5,14 @@ from sklearn.preprocessing import StandardScaler
 
 
 class CharacterClusteringTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, n_clusters: int = 0, cluster_features: list[str] = []):
+    def __init__(
+        self, n_clusters: int = 0, n_pixel_clusters: int = 0, cluster_features: list[str] = []
+    ):
         self.n_clusters = n_clusters
+        self.n_pixel_clusters = n_pixel_clusters
         self.cluster_features = (
             cluster_features
-            if cluster_features is not None
+            if len(cluster_features) > 0
             else ["Contrast", "Ocrability", "FontSize"]
         )
         self.pipeline = None
@@ -36,13 +39,21 @@ class CharacterClusteringTransformer(BaseEstimator, TransformerMixin):
 
         hists = []
 
-        for sample in X['character_level_annotations']:
+        for sample, pixel_hist in zip(
+            X['character_level_annotations'],
+            X.get(
+                'pixel_histogram_' + str(self.n_pixel_clusters), [pd.Series(dtype=float)] * len(X)
+            ),
+        ):
             df = sample[self.cluster_features]
-            cluster_labels = self.pipeline.predict(df[self.cluster_features])
-            hist = pd.Series(cluster_labels).value_counts(normalize=True).sort_index()
-            hist = hist.reindex(
+            character_cluster_labels = self.pipeline.predict(df[self.cluster_features])
+            character_hist = (
+                pd.Series(character_cluster_labels).value_counts(normalize=True).sort_index()
+            )
+            character_hist = character_hist.reindex(
                 range(self.n_clusters), fill_value=0.0
             )  # fill missing clusters with 0.0
+            hist = pd.concat([character_hist, pixel_hist], ignore_index=True)
             hists.append(hist)
 
         return hists

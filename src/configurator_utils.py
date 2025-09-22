@@ -190,3 +190,23 @@ def load_gray_pixels_from_image(filepath: str):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     pixels = image.reshape(-1, 1)
     return pixels
+
+
+def colorblind_friendly_plots(normal_plot_html, colorblind_plot_html):
+    rand_id = np.random.randint(0, 1e6)
+    js = f'var normalPlot = document.getElementById("normal_plot_{rand_id}");\
+        var colorblindPlot = document.getElementById("colorblind_plot_{rand_id}");\
+        if(this.checked) {{\
+            normalPlot.style.display = "none";\
+            colorblindPlot.style.display = "block";\
+        }} else {{\
+            normalPlot.style.display = "block";\
+            colorblindPlot.style.display = "none";\
+        }}\
+        document.querySelectorAll("[data-title=\\"Autoscale\\"]").forEach(e=>e.click());'  # Fixes a bug where plots layout is off after toggling
+    html = f"""
+    <label style="font-family:sans-serif"><input type="checkbox" id="checkbox_{rand_id}" onchange='{js}'> Show colorblind friendly plot</label>
+    <div id="normal_plot_{rand_id}">{normal_plot_html}</div>
+    <div id="colorblind_plot_{rand_id}" style="display:none">{colorblind_plot_html}</div>
+    """
+    return html

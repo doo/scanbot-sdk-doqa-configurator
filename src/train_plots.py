@@ -76,6 +76,7 @@ def plot_classification(
     y_pred: pd.Series,
     output_dir,
     threshold_waypoints: ThresholdWaypoints,
+    colorblind_friendly: bool = False,
 ):
     thresholds = np.linspace(0, 1, 101)
     total_samples = len(y)
@@ -128,6 +129,22 @@ def plot_classification(
         vertical_spacing=0.4,
         row_heights=[0.7, 0.3],
     )
+
+    if colorblind_friendly:
+        color_tp = '#648FFF'
+        color_up = '#FFB000'
+        color_fn = '#DC267F'
+        color_fp = 'hsl(331, 73%, 70%)'
+        color_un = 'hsl(41, 100%, 75%)'
+        color_tn = 'hsl(224, 100%, 90%)'
+    else:
+        color_tp = 'rgba(0, 230, 0, 0.6)'
+        color_up = 'rgba(230, 230, 0, 0.6)'
+        color_fn = 'rgba(230, 0, 0, 0.6)'
+        color_fp = 'rgba(128, 0, 0, 0.7)'
+        color_tn = 'rgba(0, 128, 0, 0.7)'
+        color_un = 'rgba(160, 160, 0, 0.7)'
+
     # First subplot: Stacked area chart
     fig.add_trace(
         go.Scatter(
@@ -136,7 +153,7 @@ def plot_classification(
             fill='tonexty',
             mode='none',
             name='True Negatives ("unacceptable" document correctly classified)',
-            fillcolor='rgba(0, 128, 0, 0.7)',
+            fillcolor=color_tn,
             stackgroup='one',
             legendgroup='classification',
         ),
@@ -151,7 +168,7 @@ def plot_classification(
             fill='tonexty',
             mode='none',
             name='Uncertain Negatives ("unacceptable" document classified as "uncertain")',
-            fillcolor='rgba(160, 160, 0, 0.7)',
+            fillcolor=color_un,
             stackgroup='one',
             legendgroup='classification',
         ),
@@ -166,7 +183,7 @@ def plot_classification(
             fill='tonexty',
             mode='none',
             name='False Positives ("unacceptable" document classified as "acceptable")',
-            fillcolor='rgba(128, 0, 0, 0.7)',
+            fillcolor=color_fp,
             stackgroup='one',
             legendgroup='classification',
         ),
@@ -181,7 +198,7 @@ def plot_classification(
             fill='tonexty',
             mode='none',
             name='False Negatives ("acceptable" document classified as "unacceptable")',
-            fillcolor='rgba(230, 0, 0, 0.6)',
+            fillcolor=color_fn,
             stackgroup='one',
             legendgroup='classification',
         ),
@@ -196,7 +213,7 @@ def plot_classification(
             fill='tonexty',
             mode='none',
             name='Uncertain Positives ("acceptable" document classified as "uncertain")',
-            fillcolor='rgba(230, 230, 0, 0.6)',
+            fillcolor=color_up,
             stackgroup='one',
             legendgroup='classification',
         ),
@@ -211,7 +228,7 @@ def plot_classification(
             fill='tonexty',
             mode='none',
             name='True Positives ("acceptable" document correctly classified)',
-            fillcolor='rgba(0, 230, 0, 0.6)',
+            fillcolor=color_tp,
             stackgroup='one',
             legendgroup='classification',
         ),
@@ -226,7 +243,7 @@ def plot_classification(
             y=uncertain_counts,
             mode='lines',
             name='% Uncertain',
-            line=dict(color='orange', width=3),
+            line=dict(color=color_up, width=3),
             legendgroup='performance',
         ),
         row=1,
@@ -239,7 +256,7 @@ def plot_classification(
             y=incorrect_counts,
             mode='lines',
             name='% Incorrect',
-            line=dict(color='red', width=3),
+            line=dict(color=color_fn, width=3),
             legendgroup='performance',
         ),
         row=1,
@@ -252,7 +269,7 @@ def plot_classification(
             y=correct_counts,
             mode='lines',
             name='% Correct',
-            line=dict(color='green', width=3),
+            line=dict(color=color_tp, width=3),
             legendgroup='performance',
         ),
         row=1,

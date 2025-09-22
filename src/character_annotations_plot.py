@@ -1,3 +1,5 @@
+import base64
+import io
 from pathlib import Path
 
 import cv2 as cv
@@ -8,7 +10,11 @@ import numpy as np
 import scanbotsdk
 
 
-def plot_annotations(image_path: Path, annotations: scanbotsdk.DocumentQualityAnalyzerTrainingData):
+def plot_annotations(
+    image_path: Path,
+    annotations: scanbotsdk.DocumentQualityAnalyzerTrainingData,
+    colorblind_friendly: bool = False,
+):
     character_level_annotations = annotations.character_level_annotations
 
     img_array = cv.imread(str(image_path))
@@ -33,16 +39,15 @@ def plot_annotations(image_path: Path, annotations: scanbotsdk.DocumentQualityAn
 
         norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
+        cmap = plt.cm.cividis if colorblind_friendly else plt.cm.RdYlGn
         if metric_name == "Orientation":
             cm_colors = np.vstack(
                 [
-                    plt.cm.RdYlGn(np.linspace(0, 1, plt.cm.RdYlGn.N)),
-                    plt.cm.RdYlGn.reversed()(np.linspace(0, 1, plt.cm.RdYlGn.N)),
+                    cmap(np.linspace(0, 1, cmap.N)),
+                    cmap.reversed()(np.linspace(0, 1, cmap.N)),
                 ]
             )
             cmap = colors.ListedColormap(cm_colors)
-        else:
-            cmap = plt.cm.RdYlGn
 
         for char in character_level_annotations.annotations:
             value = metric_values_func(char)
@@ -79,4 +84,10 @@ def plot_annotations(image_path: Path, annotations: scanbotsdk.DocumentQualityAn
 
     plt.tight_layout()
 
-    return plt
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight')
+    buf.seek(0)
+    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    html = f'<img style="max-width: 100%" src="data:image/png;base64,{img_base64}"/>'
+    plt.close(fig)
+    return html

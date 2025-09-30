@@ -5,14 +5,12 @@ from sklearn.preprocessing import StandardScaler
 
 
 class CharacterClusteringTransformer(BaseEstimator, TransformerMixin):
-    def __init__(
-        self, n_clusters: int = 0, n_pixel_clusters: int = 0, cluster_features: list[str] = []
-    ):
+    def __init__(self, n_clusters: int = 0, n_pixel_clusters: int = 0, cluster_features=None):
         self.n_clusters = n_clusters
         self.n_pixel_clusters = n_pixel_clusters
         self.cluster_features = (
             cluster_features
-            if len(cluster_features) > 0
+            if cluster_features is not None
             else ["Contrast", "Ocrability", "FontSize"]
         )
         self.pipeline = None

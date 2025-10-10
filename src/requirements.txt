@@ -10,3 +10,4 @@ papermill
 nbconvert
 notebook
 matplotlib
+ipywidgets

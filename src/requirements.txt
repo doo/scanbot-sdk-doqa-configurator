@@ -1,0 +1,13 @@
+numpy
+pandas
+scikit-learn
+click
+tqdm
+wget
+opencv-python
+plotly
+papermill
+nbconvert
+notebook
+matplotlib
+ipywidgets

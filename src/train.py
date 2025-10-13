@@ -28,7 +28,13 @@ from tsne_plot import tsne_plot
 
 
 @click.command(context_settings={'show_default': True})
-@click.option('--scanbotsdk_license_key', type=str, required=True, help='Scanbot SDK license key')
+@click.option(
+    '--scanbotsdk_license_key',
+    type=str,
+    required=True,
+    help='Scanbot SDK license key',
+    default=os.environ.get("SCANBOT_SDK_LICENSE", None),
+)
 @click.option(
     '--training_dir',
     type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),

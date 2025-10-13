@@ -31,10 +31,10 @@ To run this tool, you need to have the following:
   ```
 - Place the training images into the folders `data/bad` & `data/good`.
   Images should be in JPG or PNG format.
-- Put the version of the ScanbotSDK Core inside the `docker-compose.yaml`.
+- Modify the `.env` file and put the version of the ScanbotSDK Core and your license key there.
 - Run the following command to produce the custom configuration:
   ```
-  docker compose run --build --rm sbsdk-doqa-configurator --scanbotsdk_license_key=YOUR_LICENSE_KEY
+  docker compose run --build --rm sbsdk-doqa-configurator
   ```
 - Your config will be created in `data/DoQA_config.txt`. Please provide the contents of this file during the configuration of the Scanbot SDK.
 - A report will be generated in `data/training_report.html` that shows what performance you can expect from your new configuration.
@@ -51,6 +51,6 @@ Usage:
 - Place the images that yield unexpected DoQA results and you would like to examine in the folder `data/explain` (JPEG or PNG).
 - Run the following command
   ```
-  docker compose run --build --rm --entrypoint python sbsdk-doqa-configurator /app/explain.py --scanbotsdk_license_key=YOUR_LICENSE_KEY
+  docker compose run --env-from-file=.env --build --rm --entrypoint python sbsdk-doqa-configurator /app/explain.py --scanbotsdk_license_key=YOUR_LICENSE_KEY
   ```
   The command will generate one report HTML in `data/explain` for every image in that folder. These reports can help you understand how the DoQA operates and what you can do to improve its performance.

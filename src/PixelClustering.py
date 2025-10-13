@@ -28,7 +28,7 @@ class PixelClusteringTransformer:
         )
 
     def bin_boundaries(self):
-        assert self.n_pixel_clusters >= 2
+        assert self.n_pixel_clusters >= 3
         n = self.n_pixel_clusters - 1
         # We make the bins at the boundaries half as wide. This seems to improve the
         # ability of the model to detect too bright/dark images.

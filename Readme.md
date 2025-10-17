@@ -52,7 +52,7 @@ Usage:
 - Place the images that yield unexpected DoQA results and you would like to examine in the folder `data/explain` (JPEG or PNG).
 - Run the following command
   ```
-  docker compose run --env-from-file=.env --build --rm --entrypoint python sbsdk-doqa-configurator /app/explain.py --scanbotsdk_license_key=YOUR_LICENSE_KEY
+  docker compose run --env-from-file=.env --build --rm --entrypoint python sbsdk-doqa-configurator /app/explain.py
   ```
   The command will generate one report HTML in `data/explain` for every image in that folder. These reports can help you understand how the DoQA operates and what you can do to improve its performance.
 

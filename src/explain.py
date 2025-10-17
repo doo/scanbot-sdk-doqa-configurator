@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import click
@@ -8,7 +9,13 @@ from configurator_utils import image_extensions, render_notebook
     context_settings={'show_default': True},
     help="Generates explanation reports for all images in the 'explain' subfolder of the training directory. See the Readme.md for details.",
 )
-@click.option('--scanbotsdk_license_key', type=str, required=True, help='Scanbot SDK license key')
+@click.option(
+    '--scanbotsdk_license_key',
+    type=str,
+    required=True,
+    help='Scanbot SDK license key',
+    default=os.environ.get("SCANBOT_SDK_LICENSE", None),
+)
 @click.option(
     '--training_dir',
     type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),

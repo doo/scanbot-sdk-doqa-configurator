@@ -19,7 +19,7 @@ To run this tool, you need to have the following:
 
 - [Docker](https://docs.docker.com/engine/install/) with [Docker Compose](https://docs.docker.com/compose/install/) support
 - Images of documents that are of sufficient (good) or insufficient (bad) quality for your use-case.
-  Per class good / bad you should provide at least 100 samples (200 in total). The more samples you provide, the better final configuration will fit to your use-case.
+  Per class "good" and "bad" you should provide at least 100 samples (200 in total). The more samples you provide, the better final configuration will fit to your use-case. The samples should be in JPG or PNG format. If you have PDF files at hand, we provide a script to convert PDF -> PNG (see below).
 - A special license key that is only valid for the DoQA Configurator. This license key will be different from the license key you use in your app. Please contact [customer support](https://docs.scanbot.io/support/) to obtain it.
 - You need to know the version of the ScanbotSDK Core used in your release. Please also contact [customer support](https://docs.scanbot.io/support/) to obtain it.
 
@@ -29,9 +29,10 @@ To run this tool, you need to have the following:
   ```
   git clone https://github.com/doo/scanbot-sdk-doqa-configurator
   ```
+- Modify the `.env` file and put the version of the ScanbotSDK Core and your license key there.
 - Place the training images into the folders `data/bad` & `data/good`.
   Images should be in JPG or PNG format.
-- Modify the `.env` file and put the version of the ScanbotSDK Core and your license key there.
+  If you only have PDF files available, please convert them to PNG as described below.
 - Run the following command to produce the custom configuration:
   ```
   docker compose run --build --rm sbsdk-doqa-configurator
@@ -54,3 +55,17 @@ Usage:
   docker compose run --env-from-file=.env --build --rm --entrypoint python sbsdk-doqa-configurator /app/explain.py --scanbotsdk_license_key=YOUR_LICENSE_KEY
   ```
   The command will generate one report HTML in `data/explain` for every image in that folder. These reports can help you understand how the DoQA operates and what you can do to improve its performance.
+
+## PDF to PNG
+
+If you only have PDF files at hand, we provide a convenience script to extract images from PDF files and store them as PNG so that they can be used in the training.
+To use this PDF -> PNG conversion, please:
+
+- Follow the basic setup instructions in the [Usage](#Usage) section above
+- Place your PDF files in the `data/bad` & `data/good` folders
+- Then run the following script:
+  ```
+  docker compose run --env-from-file=.env --build --rm --entrypoint python sbsdk-doqa-configurator /app/pdf_to_png.py
+  ```
+
+This will add appropriate PNG files in the respective folders.

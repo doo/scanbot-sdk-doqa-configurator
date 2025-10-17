@@ -17,7 +17,7 @@ By providing examples of images that have sufficient or insufficient quality for
 
 To run this tool, you need to have the following:
 
-- [Docker](https://docs.docker.com/engine/install/) with [Docker Compose](https://docs.docker.com/compose/install/) support
+- [Docker](https://docs.docker.com/engine/install/) with [Docker Compose](https://docs.docker.com/compose/install/) (version 2.34.0 or later)
 - Images of documents that are of sufficient (good) or insufficient (bad) quality for your use-case.
   Per class "good" and "bad" you should provide at least 100 samples (200 in total). The more samples you provide, the better final configuration will fit to your use-case. The samples should be in JPG or PNG format. If you have PDF files at hand, we provide a script to convert PDF -> PNG (see below).
 - A special license key that is only valid for the DoQA Configurator. This license key will be different from the license key you use in your app. Please contact [customer support](https://docs.scanbot.io/support/) to obtain it.

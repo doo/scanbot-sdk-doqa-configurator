@@ -35,7 +35,7 @@ To run this tool, you need to have the following:
   If you only have PDF files available, please convert them to PNG as described below.
 - Run the following command to produce the custom configuration:
   ```
-  docker compose run --build --rm sbsdk-doqa-configurator
+  docker compose run --env-from-file=.env --build --rm sbsdk-doqa-configurator
   ```
 - Your config will be created in `data/DoQA_config.txt`. Please provide the contents of this file during the configuration of the Scanbot SDK.
 - A report will be generated in `data/training_report.html` that shows what performance you can expect from your new configuration.

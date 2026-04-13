@@ -4,7 +4,7 @@ default_stages:
 repos:
   # general file format
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: f71fa2c1f9cf5cb705f73dffe4b21f7c61470ba9  # v4.4.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
@@ -13,37 +13,37 @@ repos:
 
   # markdown formatting
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.21
+    rev: e20b1ac5acb8aba0b49d3a9109c6e6b58684ee83  # 0.7.21
     hooks:
       - id: mdformat
         # Optionally add plugins
         additional_dependencies:
-          - mdformat-gfm
-          - mdformat-black
+          - mdformat-gfm==1.0.0
+          - mdformat-black==0.1.1
 
   # automatically upgrade python code for newer versions
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
+    rev: 01cee377ba3a5264c7fbe7b6beae7b575f764dc3  # v3.3.1
     hooks:
       - id: pyupgrade
         args: [--py310-plus]
 
   # remove unused python imports
   - repo: https://github.com/myint/autoflake
-    rev: v2.0.0
+    rev: 75f8afa727c367ecc6829f31866e9c6fbb908bc6  # v2.0.0
     hooks:
       - id: autoflake
         args: [ --in-place, --remove-all-unused-imports ]
 
   # turn relative imports into absolute ones
   - repo: https://github.com/MarcoGorelli/absolufy-imports
-    rev: v0.3.1
+    rev: 1683a63d850e065495c05b771e4a20db010a58e7  # v0.3.1
     hooks:
       - id: absolufy-imports
 
   # sort python imports
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: dbf82f2dd09ae41d9355bcd7ab69187a19e6bf2f  # 5.12.0
     hooks:
       - id: isort
         name: isort (python)
@@ -56,7 +56,7 @@ repos:
 
   # format python code
   - repo: https://github.com/psf/black
-    rev: 22.12.0
+    rev: 2ddea293a88919650266472186620a98a4a8bb37  # 22.12.0
     hooks:
       - id: black
         language_version: python3 # Should be a command that runs python3.6+
@@ -64,14 +64,14 @@ repos:
 
   # type checks
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+    rev: 8cd2d4056637e242709fe09f15a36f0b4b682bda  # v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: [ numpy==1.26.*, types-PyYAML, types-requests, types-cachetools, types-python-dateutil, types-retry, types-protobuf]
+        additional_dependencies: [ numpy==1.26.*, types-PyYAML==6.0.12, types-requests==2.28.11, types-cachetools==5.2.1, types-python-dateutil==2.8.19, types-retry==0.9.9, types-protobuf==3.20.4]
         exclude: .*\.pyi$
 
   # python style
   - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
+    rev: c838a5e98878f17889cfce311e1406d252f87ec5  # 6.0.0
     hooks:
       - id: flake8

@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import click
+
 from configurator_utils import image_extensions, render_notebook
 
 

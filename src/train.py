@@ -6,12 +6,15 @@ import random
 import typing
 from pathlib import Path
 
-import CharacterClusteringTransformer
 import click
 import numpy as np
-import OpenCVSVMClassifier
 import pandas as pd
 import scanbotsdk
+from sklearn.model_selection import GridSearchCV, ParameterGrid, StratifiedKFold
+from sklearn.pipeline import Pipeline
+
+import CharacterClusteringTransformer
+import OpenCVSVMClassifier
 from configurator_utils import (
     ThresholdWaypoints,
     best_low_complexity,
@@ -21,8 +24,6 @@ from configurator_utils import (
     render_notebook,
 )
 from PixelClustering import PixelClusteringTransformer
-from sklearn.model_selection import GridSearchCV, ParameterGrid, StratifiedKFold
-from sklearn.pipeline import Pipeline
 from train_plots import plot_classification, plot_grid_search
 from tsne_plot import tsne_plot
 

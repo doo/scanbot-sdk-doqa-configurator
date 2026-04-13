@@ -75,3 +75,4 @@ repos:
     rev: c838a5e98878f17889cfce311e1406d252f87ec5  # 6.0.0
     hooks:
       - id: flake8
+        args: [--ignore=E501]

@@ -3,8 +3,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from configurator_utils import ThresholdWaypoints
 from plotly.subplots import make_subplots
+
+from configurator_utils import ThresholdWaypoints
 from UncertaintyThresholdClassifier import UncertaintyThresholdClassifier
 
 

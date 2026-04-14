@@ -11,8 +11,9 @@ import papermill as pm
 import scanbotsdk
 from joblib import Memory
 from nbconvert import HTMLExporter
-from PixelClustering import PixelClusteringTransformer
 from tqdm import tqdm
+
+from PixelClustering import PixelClusteringTransformer
 
 all_features = [
     "Contrast",

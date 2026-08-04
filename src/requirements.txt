@@ -4,7 +4,7 @@ scikit-learn
 click
 tqdm
 wget
-opencv-python
+opencv-contrib-python
 plotly
 papermill
 nbconvert
